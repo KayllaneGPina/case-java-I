@@ -31,15 +31,31 @@ public class ProductService {
     }
 
     public ProductDTO createProduct(ProductDTO productDTO) {
-        return null;
+        Product product = new Product();
+        product.setName(productDTO.name());
+        product.setPrice(productDTO.price());
+        product.setDescription(productDTO.description());
+        Product savedProduct = repository.save(product);
+        return new ProductDTO(savedProduct.getId(), savedProduct.getName(), savedProduct.getPrice(), savedProduct.getDescription());
     }
 
     public Optional<ProductDTO> updateProduct(Long id, ProductDTO productDetails) {
-        return null;
+        return repository.findById(id)
+                .map(product -> {
+                    product.setName(productDetails.name());
+                    product.setPrice(productDetails.price());
+                    product.setDescription(productDetails.description());
+                    Product updatedProduct = repository.save(product);
+                    return new ProductDTO(updatedProduct.getId(), updatedProduct.getName(), updatedProduct.getPrice(), updatedProduct.getDescription());
+                });
     }
 
     public boolean deleteProduct(Long id) {
-        return false;
+        return repository.findById(id)
+                .map(product -> {
+                    repository.delete(product);
+                    return true;
+                }).orElse(false);
     }
 
     private List<ProductDTO> convertToDto(List<Product> product) {
