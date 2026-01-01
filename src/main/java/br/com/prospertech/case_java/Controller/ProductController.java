@@ -2,19 +2,21 @@ package br.com.prospertech.case_java.Controller;
 
 import br.com.prospertech.case_java.DTO.ProductDTO;
 import br.com.prospertech.case_java.Service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductService service;
+    private final ProductService service;
+
+    public ProductController(ProductService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public List<ProductDTO> getAllProducts() {
@@ -22,30 +24,31 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductDTO getById(@PathVariable Long id) {
-        return service.getProductById(id);
+    public ResponseEntity<ProductDTO> getById(@PathVariable Long id) {
+        ProductDTO product = service.getProductById(id);
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(product);
     }
 
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
         ProductDTO createdProduct = service.createProduct(productDTO);
-        return ResponseEntity.ok(createdProduct);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
-        Optional<ProductDTO> updatedProduct = service.updateProduct(id, productDTO);
-        if (updatedProduct.isPresent()) {
-            return ResponseEntity.ok(updatedProduct.get());
-        }
-        return ResponseEntity.notFound().build();
+        return service.updateProduct(id, productDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        if (service.deleteProduct(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        return service.deleteProduct(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
